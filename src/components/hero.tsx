@@ -15,6 +15,7 @@ import { motion, useAnimation } from "framer-motion";
 import { Button } from "./ui/button";
 import { useEffect, useState } from "react";
 import { createClient } from "../../supabase/client";
+import { Variants } from "framer-motion";
 
 interface HomeContent {
   id: string;
@@ -138,12 +139,12 @@ export default function Hero() {
 
   const sparkleVariants = {
     animate: {
-      scale: [1, 1.5],
-      opacity: [0.3, 1],
+      scale: [1, 1.2, 1],
+      opacity: [0, 1, 0],
       transition: {
         duration: 2,
         repeat: Infinity,
-        repeatType: "reverse",
+        repeatType: "loop" as const,
         ease: "easeInOut",
         type: "tween",
       },
@@ -189,7 +190,7 @@ export default function Hero() {
         transition={{
           duration: 4,
           repeat: Infinity,
-          repeatType: "reverse",
+          repeatType: "loop",
           ease: "easeInOut",
           type: "tween",
         }}
@@ -199,12 +200,14 @@ export default function Hero() {
       <div className="absolute inset-0">
         <motion.div
           className="absolute top-20 left-10 w-3 h-3 bg-primary/30 rounded-full"
-          variants={sparkleVariants}
+           variants={sparkleVariants}
+           initial={{ opacity: 0 }}
           animate="animate"
         />
         <motion.div
           className="absolute top-40 right-20 w-2 h-2 bg-primary/40 rounded-full"
           variants={sparkleVariants}
+          initial={{ opacity: 0 }}
           animate="animate"
           transition={{ delay: 0.5 }}
         />

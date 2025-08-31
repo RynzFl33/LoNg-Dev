@@ -315,11 +315,13 @@ export default function ProjectsPage() {
                 >
                   <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden h-full">
                     <div className="aspect-video overflow-hidden relative">
+                      {project.image && (
                       <img
                         src={project.image}
                         alt={project.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
+                      )}
                       {project.featured && (
                         <div className="absolute top-4 left-4">
                           <Badge className="bg-yellow-500 text-yellow-900">
@@ -349,7 +351,7 @@ export default function ProjectsPage() {
                         <div className="flex gap-2">
                           <Button variant="ghost" size="sm" asChild>
                             <a
-                              href={project.live_url}
+                              href={project.live_url ?? "#"} // fallback if null
                               target="_blank"
                               rel="noopener noreferrer"
                             >
@@ -358,7 +360,7 @@ export default function ProjectsPage() {
                           </Button>
                           <Button variant="ghost" size="sm" asChild>
                             <a
-                              href={project.github_url}
+                              href={project.github_url ?? "#"} // fallback if null
                               target="_blank"
                               rel="noopener noreferrer"
                             >
@@ -429,7 +431,7 @@ export default function ProjectsPage() {
                       <div className="flex gap-1">
                         <Button variant="ghost" size="sm" asChild>
                           <a
-                            href={project.liveUrl}
+                            href={project.github_url ?? "#"}
                             target="_blank"
                             rel="noopener noreferrer"
                           >
@@ -438,7 +440,7 @@ export default function ProjectsPage() {
                         </Button>
                         <Button variant="ghost" size="sm" asChild>
                           <a
-                            href={project.githubUrl}
+                            href={project.github_url ?? "#"}
                             target="_blank"
                             rel="noopener noreferrer"
                           >

@@ -126,7 +126,7 @@ export default function AdminPage() {
 
       if (searchTerm) {
         query = query.or(
-          `action.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,table_name.ilike.%${searchTerm}%`,
+          `action.ilike.*${searchTerm}*,description.ilike.*${searchTerm}*,table_name.ilike.*${searchTerm}*`
         );
       }
 
@@ -338,8 +338,8 @@ export default function AdminPage() {
                   {
                     logs.filter(
                       (log) =>
-                        new Date(log.created_at).toDateString() ===
-                        new Date().toDateString(),
+                        log.created_at &&
+                        new Date(log.created_at).toDateString() === new Date().toDateString()
                     ).length
                   }
                 </div>
@@ -766,7 +766,9 @@ export default function AdminPage() {
                         onClick={() => setSelectedLog(log)}
                       >
                         <span className="console-timestamp">
-                          {new Date(log.created_at).toLocaleTimeString()}
+                          {log.created_at
+                            ? new Date(log.created_at).toLocaleTimeString()
+                            : "N/A"}
                         </span>
                         <span className={`console-action ${log.action}`}>
                           {log.action}
@@ -823,7 +825,7 @@ export default function AdminPage() {
                           TIMESTAMP
                         </label>
                         <span className="text-sm text-gray-300">
-                          {formatDate(selectedLog.created_at)}
+                          {formatDate(selectedLog.created_at ?? "")}
                         </span>
                       </div>
                       <div>
@@ -831,7 +833,7 @@ export default function AdminPage() {
                           TABLE
                         </label>
                         <span className="console-table">
-                          {selectedLog.table_name || "N/A"}
+                          {selectedLog.table_name ?? "N/A"}
                         </span>
                       </div>
                       <div>
@@ -839,7 +841,7 @@ export default function AdminPage() {
                           RECORD_ID
                         </label>
                         <span className="console-id text-sm">
-                          {selectedLog.record_id || "N/A"}
+                          {selectedLog.record_id ?? "N/A"}
                         </span>
                       </div>
                     </div>
@@ -855,13 +857,13 @@ export default function AdminPage() {
                       </div>
                     )}
 
-                    {selectedLog.ip_address && (
+                    {selectedLog?.ip_address !== undefined && (
                       <div className="mb-4">
                         <label className="text-xs font-medium text-gray-400 block mb-1">
                           IP_ADDRESS
                         </label>
                         <span className="text-sm text-gray-300 font-mono">
-                          {selectedLog.ip_address}
+                          {selectedLog.ip_address ? String(selectedLog.ip_address) : "N/A"}
                         </span>
                       </div>
                     )}
@@ -872,7 +874,7 @@ export default function AdminPage() {
                           USER_AGENT
                         </label>
                         <span className="text-xs text-gray-400 font-mono break-all">
-                          {selectedLog.user_agent}
+                          {String(selectedLog.user_agent)}
                         </span>
                       </div>
                     )}

@@ -92,8 +92,8 @@ export default function SkillsPage() {
   const [animateProgress, setAnimateProgress] = useState(false);
   const supabase = createClient();
   const skillsRef = useRef(null);
-  const isInView = useInView(skillsRef, { once: true, threshold: 0.1 });
-
+  const isInView = useInView(skillsRef, { once: true, margin: "-10%" });
+  
   useEffect(() => {
     const fetchSkills = async () => {
       try {

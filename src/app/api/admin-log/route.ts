@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "../../../../supabase/server";
-import { Tables } from "@/types/supabase";
+import { Database } from "@/types/supabase";
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const logEntry: Tables<"admin_logs">["Insert"] = {
+    const logEntry: Database["public"]["Tables"]["admin_logs"]["Insert"] = {
       user_id: user.id,
       action,
       description,

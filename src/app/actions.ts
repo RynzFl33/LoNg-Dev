@@ -4,7 +4,7 @@ import { encodedRedirect } from "@/utils/utils";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "../../supabase/server";
-import { Tables } from "@/types/supabase";
+import { Database } from "@/types/supabase";
 
 export const signInAction = async (formData: FormData) => {
   const email = formData.get("email") as string;
@@ -25,8 +25,8 @@ export const signInAction = async (formData: FormData) => {
       "LOGIN_FAILED",
       `Failed login attempt for email: ${email} - ${error.message}`,
       "auth",
-      null,
-      null,
+      undefined, // <-- changed from null to undefined
+      undefined, // <-- changed from null to undefined
       { email, error: error.message },
     );
     return encodedRedirect("error", "/sign-in", error.message);
@@ -219,7 +219,7 @@ export const logAdminAction = async (
       return;
     }
 
-    const logEntry: Tables<"admin_logs">["Insert"] = {
+    const logEntry: Database["public"]["Tables"]["admin_logs"]["Insert"] = {
       user_id: user.id,
       action,
       description,
@@ -356,15 +356,17 @@ export const createAdminUser = async (formData: FormData) => {
   }
 
   const supabase = await createClient();
+  let authData: any = undefined; // <-- Add this line
 
   try {
     // Create auth user
-    const { data: authData, error: authError } =
-      await supabase.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-      });
+    const result = await supabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+    });
+    authData = result.data; // <-- Assign here
+    const authError = result.error;
 
     if (authError) {
       console.error("Error creating auth user:", authError);
@@ -373,8 +375,8 @@ export const createAdminUser = async (formData: FormData) => {
         "CREATE_FAILED",
         `Failed to create admin user: ${email} - ${authError.message}`,
         "users",
-        null,
-        null,
+        undefined, // was: null
+        undefined, // was: null
         { email, fullName, error: authError.message },
       );
       return encodedRedirect(
@@ -389,8 +391,8 @@ export const createAdminUser = async (formData: FormData) => {
         "CREATE_FAILED",
         `Failed to create admin user: ${email} - No user data returned`,
         "users",
-        null,
-        null,
+        undefined, // was: null
+        undefined, // was: null
         { email, fullName },
       );
       return encodedRedirect(
@@ -456,9 +458,9 @@ export const createAdminUser = async (formData: FormData) => {
       "CREATE_ERROR",
       `Unexpected error creating admin user: ${fullName} (${email}) - ${error}`,
       "users",
-      null,
-      null,
-      { email, fullName, error: String(error) },
+      authData?.user?.id ?? undefined, // fix: use authData?.user?.id or undefined
+      undefined,
+      { userId: authData?.user?.id, error: String(error) },
     );
     return encodedRedirect(
       "error",
@@ -640,8 +642,8 @@ export const deleteAdminUser = async (formData: FormData) => {
       "DELETE_FAILED",
       "Failed to delete admin user - User ID is required",
       "users",
-      null,
-      null,
+      undefined, // was: null
+      undefined, // was: null
       { error: "User ID is required" },
     );
     return encodedRedirect("error", "/dashboard/admin", "User ID is required");
@@ -755,7 +757,7 @@ export const deleteAdminUser = async (formData: FormData) => {
       `Unexpected error deleting admin user: ${userId} - ${error}`,
       "users",
       userId,
-      null,
+      undefined, // was: null
       { userId, error: String(error) },
     );
     return encodedRedirect(

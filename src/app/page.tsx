@@ -26,12 +26,32 @@ import { useEffect, useState, useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
+// ----------------- Types -----------------
+interface Project {
+  id: number;
+  title: string;
+  description: string;
+  image: string;
+  technologies: string[];
+  liveUrl: string;
+  githubUrl: string;
+  featured: boolean;
+  created_at?: string;
+}
+
+interface Skill {
+  icon: React.ReactNode;
+  name: string;
+  technologies: string[];
+}
+
+// ----------------- Component -----------------
 export default function Home() {
   const [user, setUser] = useState<SupabaseUser | null>(null);
-  const [projects, setProjects] = useState([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const supabase = createClient();
 
-  // Animation refs
+  // ----------------- Refs for animations -----------------
   const projectsRef = useRef(null);
   const skillsRef = useRef(null);
   const contactRef = useRef(null);
@@ -43,66 +63,8 @@ export default function Home() {
   const skillsInView = useInView(skillsRef, { once: true, margin: "-100px" });
   const contactInView = useInView(contactRef, { once: true, margin: "-100px" });
 
-  useEffect(() => {
-    const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user);
-    };
-
-    const fetchProjects = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("projects")
-          .select("*")
-          .order("created_at", { ascending: false });
-
-        if (error) {
-          console.log("No projects table found, using mock data");
-          setProjects(mockProjects);
-        } else {
-          setProjects(data || mockProjects);
-        }
-      } catch (err) {
-        console.log("Using mock data:", err);
-        setProjects(mockProjects);
-      }
-    };
-
-    getUser();
-    fetchProjects();
-
-    // Set up real-time subscription for projects
-    const projectsSubscription = supabase
-      .channel("projects-changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "projects",
-        },
-        () => {
-          fetchProjects();
-        },
-      )
-      .subscribe();
-
-    const {
-      data: { subscription: authSubscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => {
-      authSubscription.unsubscribe();
-      projectsSubscription.unsubscribe();
-    };
-  }, [supabase.auth]);
-
-  // Mock projects data - fallback when Supabase is not available
-  const mockProjects = [
+  // ----------------- Mock projects -----------------
+  const mockProjects: Project[] = [
     {
       id: 1,
       title: "E-Commerce Platform",
@@ -153,7 +115,31 @@ export default function Home() {
     },
   ];
 
-  // Animation variants
+  // ----------------- Skills -----------------
+  const skills: Skill[] = [
+    {
+      icon: <Code2 className="w-6 h-6" />,
+      name: "Frontend Development",
+      technologies: ["React", "Next.js", "TypeScript", "Tailwind CSS"],
+    },
+    {
+      icon: <Database className="w-6 h-6" />,
+      name: "Backend Development",
+      technologies: ["Node.js", "Python", "PostgreSQL", "Supabase"],
+    },
+    {
+      icon: <Globe className="w-6 h-6" />,
+      name: "Full-Stack Solutions",
+      technologies: ["REST APIs", "GraphQL", "Authentication", "Deployment"],
+    },
+    {
+      icon: <Smartphone className="w-6 h-6" />,
+      name: "Mobile Development",
+      technologies: ["React Native", "Flutter", "PWA", "Responsive Design"],
+    },
+  ];
+
+  // ----------------- Animations -----------------
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -190,29 +176,66 @@ export default function Home() {
     },
   };
 
-  const skills = [
-    {
-      icon: <Code2 className="w-6 h-6" />,
-      name: "Frontend Development",
-      technologies: ["React", "Next.js", "TypeScript", "Tailwind CSS"],
-    },
-    {
-      icon: <Database className="w-6 h-6" />,
-      name: "Backend Development",
-      technologies: ["Node.js", "Python", "PostgreSQL", "Supabase"],
-    },
-    {
-      icon: <Globe className="w-6 h-6" />,
-      name: "Full-Stack Solutions",
-      technologies: ["REST APIs", "GraphQL", "Authentication", "Deployment"],
-    },
-    {
-      icon: <Smartphone className="w-6 h-6" />,
-      name: "Mobile Development",
-      technologies: ["React Native", "Flutter", "PWA", "Responsive Design"],
-    },
-  ];
+  // ----------------- Fetch user & projects -----------------
+  useEffect(() => {
+    const getUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user);
+    };
 
+    const fetchProjects = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("projects")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (error || !data) {
+          console.warn("No projects table found, using mock data:", error);
+          setProjects(mockProjects);
+        } else {
+          setProjects(data);
+        }
+      } catch (err) {
+        console.error("Unexpected error, using mock data:", err);
+        setProjects(mockProjects);
+      }
+    };
+
+    getUser();
+    fetchProjects();
+
+    // ----------------- Real-time subscription -----------------
+    const projectsSubscription = supabase
+      .channel("projects-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "projects",
+        },
+        () => {
+          fetchProjects();
+        }
+      )
+      .subscribe();
+
+    const {
+      data: { subscription: authSubscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => {
+      authSubscription.unsubscribe();
+      projectsSubscription.unsubscribe();
+    };
+  }, [supabase.auth]);
+
+  // ----------------- Render -----------------
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -228,37 +251,26 @@ export default function Home() {
         variants={containerVariants}
       >
         <div className="container mx-auto px-4">
+          {/* Section Title */}
           <motion.div className="text-center mb-16" variants={itemVariants}>
-            <motion.h2
-              className="text-3xl font-bold mb-4 font-mono"
-              variants={itemVariants}
-            >
+            <motion.h2 className="text-3xl font-bold mb-4 font-mono">
               &lt;Projects /&gt;
             </motion.h2>
-            <motion.p
-              className="text-muted-foreground max-w-2xl mx-auto"
-              variants={itemVariants}
-            >
+            <motion.p className="text-muted-foreground max-w-2xl mx-auto">
               A showcase of my recent work, featuring full-stack applications
               built with modern technologies.
             </motion.p>
           </motion.div>
 
+          {/* Featured Projects */}
           <motion.div
             className="grid md:grid-cols-2 gap-8 mb-12"
             variants={containerVariants}
           >
             {projects
               .filter((p) => p.featured)
-              .map((project, index) => (
-                <motion.div
-                  key={project.id}
-                  variants={cardVariants}
-                  whileHover={{
-                    scale: 1.02,
-                    transition: { duration: 0.2 },
-                  }}
-                >
+              .map((project) => (
+                <motion.div key={project.id} variants={cardVariants}>
                   <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden h-full">
                     <div className="aspect-video overflow-hidden">
                       <img
@@ -296,11 +308,7 @@ export default function Home() {
                     <CardContent>
                       <div className="flex flex-wrap gap-2">
                         {project.technologies.map((tech) => (
-                          <Badge
-                            key={tech}
-                            variant="secondary"
-                            className="text-xs font-mono"
-                          >
+                          <Badge key={tech} variant="secondary" className="text-xs font-mono">
                             {tech}
                           </Badge>
                         ))}
@@ -311,21 +319,15 @@ export default function Home() {
               ))}
           </motion.div>
 
+          {/* Non-featured Projects */}
           <motion.div
             className="grid md:grid-cols-2 lg:grid-cols-2 gap-6"
             variants={containerVariants}
           >
             {projects
               .filter((p) => !p.featured)
-              .map((project, index) => (
-                <motion.div
-                  key={project.id}
-                  variants={cardVariants}
-                  whileHover={{
-                    scale: 1.02,
-                    transition: { duration: 0.2 },
-                  }}
-                >
+              .map((project) => (
+                <motion.div key={project.id} variants={cardVariants}>
                   <Card className="group hover:shadow-md transition-all duration-300 h-full">
                     <CardHeader>
                       <CardTitle className="flex items-center justify-between text-lg">
@@ -358,11 +360,7 @@ export default function Home() {
                     <CardContent>
                       <div className="flex flex-wrap gap-1">
                         {project.technologies.map((tech) => (
-                          <Badge
-                            key={tech}
-                            variant="outline"
-                            className="text-xs font-mono"
-                          >
+                          <Badge key={tech} variant="outline" className="text-xs font-mono">
                             {tech}
                           </Badge>
                         ))}
@@ -386,33 +384,17 @@ export default function Home() {
       >
         <div className="container mx-auto px-4">
           <motion.div className="text-center mb-16" variants={itemVariants}>
-            <motion.h2
-              className="text-3xl font-bold mb-4 font-mono"
-              variants={itemVariants}
-            >
+            <motion.h2 className="text-3xl font-bold mb-4 font-mono">
               &lt;Skills /&gt;
             </motion.h2>
-            <motion.p
-              className="text-muted-foreground max-w-2xl mx-auto"
-              variants={itemVariants}
-            >
+            <motion.p className="text-muted-foreground max-w-2xl mx-auto">
               Technologies and tools I use to bring ideas to life.
             </motion.p>
           </motion.div>
 
-          <motion.div
-            className="grid md:grid-cols-2 lg:grid-cols-4 gap-8"
-            variants={containerVariants}
-          >
+          <motion.div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8" variants={containerVariants}>
             {skills.map((skill, index) => (
-              <motion.div
-                key={index}
-                variants={cardVariants}
-                whileHover={{
-                  scale: 1.05,
-                  transition: { duration: 0.2 },
-                }}
-              >
+              <motion.div key={index} variants={cardVariants}>
                 <Card className="text-center hover:shadow-md transition-shadow h-full">
                   <CardHeader>
                     <div className="mx-auto mb-4 p-3 bg-primary/10 rounded-lg w-fit">
@@ -423,11 +405,7 @@ export default function Home() {
                   <CardContent>
                     <div className="flex flex-wrap gap-2 justify-center">
                       {skill.technologies.map((tech) => (
-                        <Badge
-                          key={tech}
-                          variant="outline"
-                          className="text-xs font-mono"
-                        >
+                        <Badge key={tech} variant="outline" className="text-xs font-mono">
                           {tech}
                         </Badge>
                       ))}
@@ -450,23 +428,13 @@ export default function Home() {
         variants={containerVariants}
       >
         <div className="container mx-auto px-4 text-center">
-          <motion.h2
-            className="text-3xl font-bold mb-4 font-mono"
-            variants={itemVariants}
-          >
+          <motion.h2 className="text-3xl font-bold mb-4 font-mono" variants={itemVariants}>
             &lt;Contact /&gt;
           </motion.h2>
-          <motion.p
-            className="text-muted-foreground mb-8 max-w-2xl mx-auto"
-            variants={itemVariants}
-          >
-            Let's work together to bring your ideas to life. I'm always open to
-            discussing new opportunities.
+          <motion.p className="text-muted-foreground mb-8 max-w-2xl mx-auto" variants={itemVariants}>
+            Let's work together to bring your ideas to life. I'm always open to discussing new opportunities.
           </motion.p>
-          <motion.div
-            className="flex flex-col sm:flex-row gap-4 justify-center"
-            variants={itemVariants}
-          >
+          <motion.div className="flex flex-col sm:flex-row gap-4 justify-center" variants={itemVariants}>
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Button asChild size="lg">
                 <a href="mailto:hello@example.com">Get In Touch</a>

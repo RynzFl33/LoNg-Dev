@@ -18,7 +18,8 @@ import Link from "next/link";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import { useState, useEffect } from "react";
-import { createClient } from "../../../supabase/client";
+import { createClient } from "@supabase/supabase-js";
+import { Database as DbTypes } from "@/types/supabase"; // adjust path as needed
 
 interface AboutContent {
   id: string;
@@ -37,10 +38,14 @@ interface Experience {
 }
 
 export default function AboutPage() {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
   const [aboutContent, setAboutContent] = useState<AboutContent[]>([]);
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [interests, setInterests] = useState<string[]>([]);
-  const supabase = createClient();
 
   // Animation variants
   const containerVariants = {
@@ -189,7 +194,7 @@ export default function AboutPage() {
               transition={{ duration: 0.3 }}
             >
               <img
-                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80"
+                src="/profile.jpg" // <-- Update this path to your image
                 alt="Profile Picture"
                 className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
               />
@@ -358,3 +363,25 @@ export default function AboutPage() {
     </div>
   );
 }
+
+const logEntry: DbTypes["public"]["Tables"]["admin_logs"]["Insert"] = {
+  id: "uuid",
+  created_at: "2023-10-05T10:00:00Z",
+  table_name: "about_content",
+  record_id: "uuid",
+  action: "INSERT",
+  old_data: null,
+  new_data: {
+    id: "uuid",
+    section: "experience",
+    title: "Senior Full-Stack Developer",
+    content: "Leading development of scalable web applications using React, Next.js, and Node.js. Mentoring junior developers and architecting cloud solutions.",
+    data: [
+      "React",
+      "Next.js",
+      "TypeScript",
+      "AWS",
+      "PostgreSQL"
+    ]
+  }
+};
