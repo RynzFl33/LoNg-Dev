@@ -44,6 +44,7 @@ import {
 } from "lucide-react";
 import { createClient } from "../../../../supabase/client";
 import DashboardNavbar from "@/components/dashboard-navbar";
+import { logClientAdminAction } from "@/app/actions";
 
 interface Project {
   id: string;
@@ -162,10 +163,34 @@ export default function ProjectsManagement() {
           .eq("id", editingProject.id);
 
         if (error) throw error;
+
+        // Log the update action
+        await logClientAdminAction(
+          "UPDATE",
+          `Updated project: ${projectData.title}`,
+          "projects",
+          editingProject.id,
+          editingProject,
+          projectData,
+        );
       } else {
-        const { error } = await supabase.from("projects").insert(projectData);
+        const { data: insertedData, error } = await supabase
+          .from("projects")
+          .insert(projectData)
+          .select()
+          .single();
 
         if (error) throw error;
+
+        // Log the create action
+        await logClientAdminAction(
+          "CREATE",
+          `Created new project: ${projectData.title}`,
+          "projects",
+          insertedData?.id,
+          null,
+          projectData,
+        );
       }
 
       await fetchProjects();
@@ -195,9 +220,25 @@ export default function ProjectsManagement() {
 
   const handleDelete = async (id: string) => {
     try {
+      // Get the project before deleting for logging
+      const projectToDelete = projects.find((project) => project.id === id);
+
       const { error } = await supabase.from("projects").delete().eq("id", id);
 
       if (error) throw error;
+
+      // Log the delete action
+      if (projectToDelete) {
+        await logClientAdminAction(
+          "DELETE",
+          `Deleted project: ${projectToDelete.title}`,
+          "projects",
+          id,
+          projectToDelete,
+          null,
+        );
+      }
+
       await fetchProjects();
     } catch (error) {
       console.error("Error deleting project:", error);

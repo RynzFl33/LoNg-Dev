@@ -47,6 +47,7 @@ export default function DashboardNavbar() {
     { href: "/dashboard/projects", label: "Projects", icon: Terminal },
     { href: "/dashboard/about", label: "About", icon: UserCircle },
     { href: "/dashboard/contact", label: "Contact", icon: Database },
+    { href: "/dashboard/admin", label: "Admin", icon: Activity },
   ];
 
   return (

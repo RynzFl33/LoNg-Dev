@@ -35,6 +35,7 @@ import {
 import { Plus, Edit, Trash2, Save } from "lucide-react";
 import { createClient } from "../../../../supabase/client";
 import DashboardNavbar from "@/components/dashboard-navbar";
+import { logClientAdminAction } from "@/app/actions";
 
 interface Skill {
   id: string;
@@ -56,6 +57,102 @@ const categories = [
   "Tools",
   "DevOps",
   "Cloud",
+];
+
+const predefinedSkills = [
+  // Programming Languages
+  "JavaScript",
+  "TypeScript",
+  "Python",
+  "Java",
+  "PHP",
+  "C++",
+  "C#",
+  "Go",
+  "Rust",
+  "Swift",
+  "Kotlin",
+  "Ruby",
+  "Scala",
+  "Dart",
+  // Frontend Technologies
+  "HTML",
+  "CSS",
+  "React",
+  "Vue.js",
+  "Angular",
+  "Svelte",
+  "Next.js",
+  "Nuxt.js",
+  "Gatsby",
+  "jQuery",
+  "Bootstrap",
+  "Tailwind CSS",
+  "Sass",
+  "Less",
+  // Backend Technologies
+  "Node.js",
+  "Express.js",
+  "Django",
+  "Flask",
+  "FastAPI",
+  "Spring Boot",
+  "Laravel",
+  "CodeIgniter",
+  "Ruby on Rails",
+  "ASP.NET",
+  "Gin",
+  "Fiber",
+  // Databases
+  "MySQL",
+  "PostgreSQL",
+  "MongoDB",
+  "Redis",
+  "SQLite",
+  "Oracle",
+  "SQL Server",
+  "Cassandra",
+  "DynamoDB",
+  "Firebase",
+  "Supabase",
+  // Cloud & DevOps
+  "AWS",
+  "Azure",
+  "Google Cloud",
+  "Docker",
+  "Kubernetes",
+  "Jenkins",
+  "GitLab CI",
+  "GitHub Actions",
+  "Terraform",
+  "Ansible",
+  // Tools & Others
+  "Git",
+  "Webpack",
+  "Vite",
+  "Babel",
+  "ESLint",
+  "Prettier",
+  "Jest",
+  "Cypress",
+  "Selenium",
+  "Postman",
+  "Figma",
+  "Adobe XD",
+  // Mobile Development
+  "React Native",
+  "Flutter",
+  "Ionic",
+  "Xamarin",
+  "Android Studio",
+  "Xcode",
+  // Animation & Graphics
+  "Framer Motion",
+  "GSAP",
+  "Three.js",
+  "D3.js",
+  "Chart.js",
+  "Lottie",
 ];
 
 const getSkillColor = (level: number) => {
@@ -83,6 +180,7 @@ export default function SkillsManagement() {
     level: 50,
     category: "",
   });
+  const [useCustomName, setUseCustomName] = useState(false);
 
   const supabase = createClient();
 
@@ -132,25 +230,53 @@ export default function SkillsManagement() {
 
     try {
       if (editingSkill) {
-        const { error } = await supabase
-          .from("skills")
-          .update({
-            name: formData.name,
-            level: formData.level,
-            category: formData.category,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", editingSkill.id);
-
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("skills").insert({
+        const skillData = {
           name: formData.name,
           level: formData.level,
           category: formData.category,
-        });
+          updated_at: new Date().toISOString(),
+        };
+
+        const { error } = await supabase
+          .from("skills")
+          .update(skillData)
+          .eq("id", editingSkill.id);
 
         if (error) throw error;
+
+        // Log the update action
+        await logClientAdminAction(
+          "UPDATE",
+          `Updated skill: ${formData.name}`,
+          "skills",
+          editingSkill.id,
+          editingSkill,
+          skillData,
+        );
+      } else {
+        const skillData = {
+          name: formData.name,
+          level: formData.level,
+          category: formData.category,
+        };
+
+        const { data: insertedData, error } = await supabase
+          .from("skills")
+          .insert(skillData)
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Log the create action
+        await logClientAdminAction(
+          "CREATE",
+          `Created new skill: ${formData.name}`,
+          "skills",
+          insertedData?.id,
+          null,
+          skillData,
+        );
       }
 
       await fetchSkills();
@@ -168,14 +294,32 @@ export default function SkillsManagement() {
       level: skill.level,
       category: skill.category,
     });
+    // Check if the skill name is in predefined list
+    setUseCustomName(!predefinedSkills.includes(skill.name));
     setIsDialogOpen(true);
   };
 
   const handleDelete = async (id: string) => {
     try {
+      // Get the skill before deleting for logging
+      const skillToDelete = skills.find((skill) => skill.id === id);
+
       const { error } = await supabase.from("skills").delete().eq("id", id);
 
       if (error) throw error;
+
+      // Log the delete action
+      if (skillToDelete) {
+        await logClientAdminAction(
+          "DELETE",
+          `Deleted skill: ${skillToDelete.name}`,
+          "skills",
+          id,
+          skillToDelete,
+          null,
+        );
+      }
+
       await fetchSkills();
       setDeleteSkillId(null);
     } catch (error) {
@@ -186,6 +330,7 @@ export default function SkillsManagement() {
   const resetForm = () => {
     setFormData({ name: "", level: 50, category: "" });
     setEditingSkill(null);
+    setUseCustomName(false);
   };
 
   const handleDialogClose = () => {
@@ -226,15 +371,62 @@ export default function SkillsManagement() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <Label htmlFor="name">Skill Name</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                    placeholder="e.g., React"
-                    required
-                  />
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        type="button"
+                        variant={!useCustomName ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => {
+                          setUseCustomName(false);
+                          setFormData({ ...formData, name: "" });
+                        }}
+                      >
+                        Select from List
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={useCustomName ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => {
+                          setUseCustomName(true);
+                          setFormData({ ...formData, name: "" });
+                        }}
+                      >
+                        Custom Name
+                      </Button>
+                    </div>
+                    {!useCustomName ? (
+                      <Select
+                        value={formData.name}
+                        onValueChange={(value) =>
+                          setFormData({ ...formData, name: value })
+                        }
+                        required
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a skill" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-60">
+                          {predefinedSkills.map((skill) => (
+                            <SelectItem key={skill} value={skill}>
+                              {skill}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) =>
+                          setFormData({ ...formData, name: e.target.value })
+                        }
+                        placeholder="Enter custom skill name"
+                        required
+                      />
+                    )}
+                  </div>
                 </div>
                 <div>
                   <Label htmlFor="category">Category</Label>

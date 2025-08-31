@@ -29,6 +29,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Edit, Trash2, Save, User, Briefcase, Heart } from "lucide-react";
 import { createClient } from "../../../../supabase/client";
 import DashboardNavbar from "@/components/dashboard-navbar";
+import { logClientAdminAction } from "@/app/actions";
 
 interface AboutContent {
   id: string;
@@ -134,12 +135,34 @@ export default function AboutManagement() {
           .eq("id", editingContent.id);
 
         if (error) throw error;
+
+        // Log the update action
+        await logClientAdminAction(
+          "UPDATE",
+          `Updated about content section: ${contentData.section}`,
+          "about_content",
+          editingContent.id,
+          editingContent,
+          contentData,
+        );
       } else {
-        const { error } = await supabase
+        const { data: insertedData, error } = await supabase
           .from("about_content")
-          .insert(contentData);
+          .insert(contentData)
+          .select()
+          .single();
 
         if (error) throw error;
+
+        // Log the create action
+        await logClientAdminAction(
+          "CREATE",
+          `Created new about content section: ${contentData.section}`,
+          "about_content",
+          insertedData?.id,
+          null,
+          contentData,
+        );
       }
 
       await fetchAboutContent();
@@ -163,12 +186,28 @@ export default function AboutManagement() {
 
   const handleDelete = async (id: string) => {
     try {
+      // Get the content before deleting for logging
+      const contentToDelete = aboutContent.find((content) => content.id === id);
+
       const { error } = await supabase
         .from("about_content")
         .delete()
         .eq("id", id);
 
       if (error) throw error;
+
+      // Log the delete action
+      if (contentToDelete) {
+        await logClientAdminAction(
+          "DELETE",
+          `Deleted about content section: ${contentToDelete.section}`,
+          "about_content",
+          id,
+          contentToDelete,
+          null,
+        );
+      }
+
       await fetchAboutContent();
     } catch (error) {
       console.error("Error deleting about content:", error);

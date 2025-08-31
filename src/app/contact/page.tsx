@@ -20,6 +20,11 @@ import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import { useState, useEffect } from "react";
 import { createClient } from "../../../supabase/client";
+import { useToast } from "@/components/ui/use-toast";
+import { Toaster } from "@/components/ui/toaster";
+import { submitContactMessage } from "../actions";
+import { useSearchParams } from "next/navigation";
+import { FormMessage, type Message } from "@/components/form-message";
 
 interface ContactInfo {
   id: string;
@@ -38,14 +43,55 @@ export default function ContactPage() {
     message: "",
   });
   const [contactInfo, setContactInfo] = useState<ContactInfo[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+  const searchParams = useSearchParams();
   const supabase = createClient();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Handle URL search params for success/error messages
+  const message = searchParams.get("message");
+  const error = searchParams.get("error");
+  const success = searchParams.get("success");
+
+  let formMessage: Message | null = null;
+  if (error) {
+    formMessage = { error };
+  } else if (success) {
+    formMessage = { success };
+  } else if (message) {
+    formMessage = { message };
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission here
-    console.log("Form submitted:", formData);
-    // Reset form
-    setFormData({ name: "", email: "", subject: "", message: "" });
+    setIsSubmitting(true);
+
+    try {
+      const form = e.target as HTMLFormElement;
+      const formDataObj = new FormData(form);
+
+      // Call the server action
+      await submitContactMessage(formDataObj);
+
+      // Show success toast
+      toast({
+        title: "Message Sent!",
+        description: "Thank you for your message! We'll get back to you soon.",
+        variant: "default",
+      });
+
+      // Reset form
+      setFormData({ name: "", email: "", subject: "", message: "" });
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleChange = (
@@ -212,6 +258,16 @@ export default function ContactPage() {
       >
         {/* Hero Section */}
         <motion.div className="text-center mb-16" variants={itemVariants}>
+          {formMessage && (
+            <motion.div
+              className="mb-8 flex justify-center"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <FormMessage message={formMessage} />
+            </motion.div>
+          )}
           <motion.h1
             className="text-4xl md:text-6xl font-bold mb-6 font-mono"
             variants={itemVariants}
@@ -290,9 +346,14 @@ export default function ContactPage() {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    <Button type="submit" size="lg" className="w-full">
+                    <Button
+                      type="submit"
+                      size="lg"
+                      className="w-full"
+                      disabled={isSubmitting}
+                    >
                       <Send className="mr-2 w-4 h-4" />
-                      Send Message
+                      {isSubmitting ? "Sending..." : "Send Message"}
                     </Button>
                   </motion.div>
                 </form>
@@ -383,6 +444,7 @@ export default function ContactPage() {
       </motion.div>
 
       <Footer />
+      <Toaster />
     </div>
   );
 }

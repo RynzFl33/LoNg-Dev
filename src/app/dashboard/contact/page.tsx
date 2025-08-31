@@ -47,9 +47,11 @@ import {
   CheckCircle,
   Circle,
   Calendar,
+  Reply,
 } from "lucide-react";
 import { createClient } from "../../../../supabase/client";
 import DashboardNavbar from "@/components/dashboard-navbar";
+import { logClientAdminAction } from "@/app/actions";
 
 interface ContactInfo {
   id: string;
@@ -221,12 +223,34 @@ export default function ContactManagement() {
           .eq("id", editingContact.id);
 
         if (error) throw error;
+
+        // Log the update action
+        await logClientAdminAction(
+          "UPDATE",
+          `Updated contact info: ${contactData.title}`,
+          "contact_info",
+          editingContact.id,
+          editingContact,
+          contactData,
+        );
       } else {
-        const { error } = await supabase
+        const { data: insertedData, error } = await supabase
           .from("contact_info")
-          .insert(contactData);
+          .insert(contactData)
+          .select()
+          .single();
 
         if (error) throw error;
+
+        // Log the create action
+        await logClientAdminAction(
+          "CREATE",
+          `Created new contact info: ${contactData.title}`,
+          "contact_info",
+          insertedData?.id,
+          null,
+          contactData,
+        );
       }
 
       await fetchContactInfo();
@@ -253,12 +277,28 @@ export default function ContactManagement() {
     if (!confirm("Are you sure you want to delete this contact info?")) return;
 
     try {
+      // Get the contact info before deleting for logging
+      const contactToDelete = contactInfo.find((contact) => contact.id === id);
+
       const { error } = await supabase
         .from("contact_info")
         .delete()
         .eq("id", id);
 
       if (error) throw error;
+
+      // Log the delete action
+      if (contactToDelete) {
+        await logClientAdminAction(
+          "DELETE",
+          `Deleted contact info: ${contactToDelete.title}`,
+          "contact_info",
+          id,
+          contactToDelete,
+          null,
+        );
+      }
+
       await fetchContactInfo();
     } catch (error) {
       console.error("Error deleting contact info:", error);
@@ -297,12 +337,27 @@ export default function ContactManagement() {
 
   const handleMarkAsRead = async (messageId: string) => {
     try {
+      const messageToUpdate = messages.find((msg) => msg.id === messageId);
+
       const { error } = await supabase
         .from("messages")
         .update({ status: "read", updated_at: new Date().toISOString() })
         .eq("id", messageId);
 
       if (error) throw error;
+
+      // Log the update action
+      if (messageToUpdate) {
+        await logClientAdminAction(
+          "UPDATE",
+          `Marked message as read from: ${messageToUpdate.name}`,
+          "messages",
+          messageId,
+          messageToUpdate,
+          { ...messageToUpdate, status: "read" },
+        );
+      }
+
       await fetchMessages();
     } catch (error) {
       console.error("Error marking message as read:", error);
@@ -313,16 +368,48 @@ export default function ContactManagement() {
     if (!confirm("Are you sure you want to delete this message?")) return;
 
     try {
+      // Get the message before deleting for logging
+      const messageToDelete = messages.find((msg) => msg.id === messageId);
+
       const { error } = await supabase
         .from("messages")
         .delete()
         .eq("id", messageId);
 
       if (error) throw error;
+
+      // Log the delete action
+      if (messageToDelete) {
+        await logClientAdminAction(
+          "DELETE",
+          `Deleted message from: ${messageToDelete.name} (${messageToDelete.email})`,
+          "messages",
+          messageId,
+          messageToDelete,
+          null,
+        );
+      }
+
       await fetchMessages();
+
+      // Close dialog if the deleted message was being viewed
+      if (selectedMessage?.id === messageId) {
+        setIsMessageDialogOpen(false);
+        setSelectedMessage(null);
+      }
     } catch (error) {
       console.error("Error deleting message:", error);
     }
+  };
+
+  const handleReplyToMessage = (message: Message) => {
+    // Create a mailto link with pre-filled content
+    const subject = `Re: ${message.subject || "Your message"}`;
+    const body = `Hi ${message.name},\n\nThank you for your message:\n\n"${message.message}"\n\nBest regards,`;
+    const mailtoLink = `mailto:${message.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+    // Open the default email client
+    window.open(mailtoLink, "_blank");
   };
 
   const formatDate = (dateString: string) => {
@@ -632,13 +719,23 @@ export default function ContactManagement() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleViewMessage(message)}
+                                title="View message"
                               >
                                 <Eye className="w-4 h-4" />
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
+                                onClick={() => handleReplyToMessage(message)}
+                                title="Reply to message"
+                              >
+                                <Reply className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => handleDeleteMessage(message.id)}
+                                title="Delete message"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>
@@ -722,15 +819,20 @@ export default function ContactManagement() {
                   <Button
                     variant="outline"
                     onClick={() => setIsMessageDialogOpen(false)}
-                    className="flex-1"
                   >
                     Close
+                  </Button>
+                  <Button
+                    variant="default"
+                    onClick={() => handleReplyToMessage(selectedMessage)}
+                  >
+                    <Reply className="w-4 h-4 mr-2" />
+                    Reply
                   </Button>
                   <Button
                     variant="destructive"
                     onClick={() => {
                       handleDeleteMessage(selectedMessage.id);
-                      setIsMessageDialogOpen(false);
                     }}
                   >
                     <Trash2 className="w-4 h-4 mr-2" />

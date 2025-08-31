@@ -106,4 +106,86 @@
       background-position: 100% 50%;
     }
   }
+
+  .console-log {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+    color: #c9d1d9;
+  }
+
+  .console-log-entry {
+    border-bottom: 1px solid #21262d;
+    padding: 8px 12px;
+    font-size: 13px;
+    line-height: 1.4;
+    transition: background-color 0.1s ease;
+  }
+
+  .console-log-entry:hover {
+    background-color: #161b22;
+  }
+
+  .console-log-entry:last-child {
+    border-bottom: none;
+  }
+
+  .console-timestamp {
+    color: #7d8590;
+    font-size: 11px;
+    margin-right: 8px;
+  }
+
+  .console-action {
+    font-weight: 600;
+    margin-right: 8px;
+  }
+
+  .console-action.LOGIN {
+    color: #3fb950;
+  }
+
+  .console-action.LOGOUT {
+    color: #7d8590;
+  }
+
+  .console-action.CREATE {
+    color: #58a6ff;
+  }
+
+  .console-action.UPDATE {
+    color: #d29922;
+  }
+
+  .console-action.DELETE {
+    color: #f85149;
+  }
+
+  .console-action.MESSAGE_RECEIVED {
+    color: #bc8cff;
+  }
+
+  .console-action.VIEW {
+    color: #56d4dd;
+  }
+
+  .console-description {
+    color: #e6edf3;
+  }
+
+  .console-table {
+    color: #7d8590;
+    background: #21262d;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    margin-left: 8px;
+  }
+
+  .console-id {
+    color: #7d8590;
+    font-size: 11px;
+    opacity: 0.7;
+  }
 }

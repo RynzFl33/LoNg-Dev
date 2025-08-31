@@ -45,6 +45,7 @@ import {
 } from "lucide-react";
 import { createClient } from "../../../../supabase/client";
 import DashboardNavbar from "@/components/dashboard-navbar";
+import { logClientAdminAction } from "@/app/actions";
 
 interface HomeContent {
   id: string;
@@ -165,12 +166,34 @@ export default function HomeManagement() {
           .eq("id", editingContent.id);
 
         if (error) throw error;
+
+        // Log the update action
+        await logClientAdminAction(
+          "UPDATE",
+          `Updated home content section: ${contentData.section}`,
+          "home_content",
+          editingContent.id,
+          editingContent,
+          contentData,
+        );
       } else {
-        const { error } = await supabase
+        const { data: insertedData, error } = await supabase
           .from("home_content")
-          .insert(contentData);
+          .insert(contentData)
+          .select()
+          .single();
 
         if (error) throw error;
+
+        // Log the create action
+        await logClientAdminAction(
+          "CREATE",
+          `Created new home content section: ${contentData.section}`,
+          "home_content",
+          insertedData?.id,
+          null,
+          contentData,
+        );
       }
 
       await fetchHomeContent();
@@ -194,12 +217,28 @@ export default function HomeManagement() {
 
   const handleDelete = async (id: string) => {
     try {
+      // Get the content before deleting for logging
+      const contentToDelete = homeContent.find((content) => content.id === id);
+
       const { error } = await supabase
         .from("home_content")
         .delete()
         .eq("id", id);
 
       if (error) throw error;
+
+      // Log the delete action
+      if (contentToDelete) {
+        await logClientAdminAction(
+          "DELETE",
+          `Deleted home content section: ${contentToDelete.section}`,
+          "home_content",
+          id,
+          contentToDelete,
+          null,
+        );
+      }
+
       await fetchHomeContent();
     } catch (error) {
       console.error("Error deleting home content:", error);
