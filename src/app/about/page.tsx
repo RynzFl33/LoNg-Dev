@@ -177,6 +177,25 @@ export default function AboutPage() {
           >
             &lt;About Me /&gt;
           </motion.h1>
+
+          {/* Profile Picture */}
+          <motion.div
+            className="mb-8 flex justify-center"
+            variants={itemVariants}
+          >
+            <motion.div
+              className="relative w-48 h-48 md:w-56 md:h-56 rounded-full overflow-hidden border-4 border-primary/20 shadow-xl"
+              whileHover={{ scale: 1.05 }}
+              transition={{ duration: 0.3 }}
+            >
+              <img
+                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80"
+                alt="Profile Picture"
+                className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+              />
+            </motion.div>
+          </motion.div>
+
           <motion.p
             className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed"
             variants={itemVariants}
