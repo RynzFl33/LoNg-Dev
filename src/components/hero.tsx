@@ -166,7 +166,7 @@ export default function Hero() {
   // Get social links
   const socialLinks = [
     {
-      href: getContent("hero_social_github", "https://github.com"),
+      href: getContent("hero_social_github", "https://github.com/RynzFl33"),
       icon: Github,
     },
     {
