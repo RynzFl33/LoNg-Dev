@@ -174,7 +174,7 @@ export default function Hero() {
       icon: Linkedin,
     },
     {
-      href: getContent("hero_social_email", "mailto:hello@example.com"),
+      href: getContent("hero_social_email", "mailto:longlxngg@gmail.com"),
       icon: Mail,
     },
   ];
@@ -337,7 +337,7 @@ export default function Hero() {
                 size="lg"
                 className="font-mono relative overflow-hidden group"
               >
-                <Link href={getData("hero_cta_primary", "href", "#projects")}>
+                <Link href={getData("hero_cta_primary", "href", "/projects")}>
                   <motion.div
                     className="absolute inset-0 bg-gradient-to-r from-primary/20 to-transparent"
                     initial={{ x: "-100%" }}
