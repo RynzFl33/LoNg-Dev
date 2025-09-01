@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import Script from "next/script";
-import { TempoInit } from "@/components/tempo-init";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Analytics } from "@vercel/analytics/next"
 
@@ -25,7 +23,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <Script src="https://api.tempo.build/proxy-asset?url=https://storage.googleapis.com/tempo-public-assets/error-handling.js" />
       <body className={`${inter.className} ${jetbrainsMono.variable}`}>
         <ThemeProvider
           attribute="class"
@@ -35,7 +32,7 @@ export default function RootLayout({
         >
           {children}
         </ThemeProvider>
-        <TempoInit />
+        <Analytics />
       </body>
     </html>
   );
