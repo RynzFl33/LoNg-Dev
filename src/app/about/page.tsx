@@ -194,7 +194,7 @@ export default function AboutPage() {
               transition={{ duration: 0.3 }}
             >
               <img
-                src="/profile.jpg" // <-- Update this path to your image
+                src="./assets/image/profile.jpg" // <-- Update this path to your image
                 alt="Profile Picture"
                 className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
               />
